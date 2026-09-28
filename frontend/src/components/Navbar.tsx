@@ -40,9 +40,9 @@ export const Navbar: React.FC = () => {
         <div
           style={{
             width: '36px', height: '36px', borderRadius: '10px',
-            background: 'linear-gradient(135deg, #0f766e, #14b8a6)',
+            background: 'linear-gradient(135deg, var(--primary-deeper), var(--primary))',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 4px 14px rgba(20,184,166,0.35)',
+            boxShadow: '0 4px 18px var(--primary-glow), inset 0 1px 0 rgba(255,255,255,0.18)',
             flexShrink: 0,
           }}
           aria-hidden="true"
@@ -50,11 +50,12 @@ export const Navbar: React.FC = () => {
           <ShieldCheck size={19} color="#fff" />
         </div>
         <div>
-          <div style={{ fontWeight: 800, fontSize: '0.95rem', letterSpacing: '-0.02em', color: '#fff', lineHeight: 1.2 }}>
+          <div style={{ fontWeight: 800, fontSize: '0.95rem', letterSpacing: '-0.025em', color: '#fff', lineHeight: 1.2 }}>
             Edumerge Smart Attendance
           </div>
-          <div style={{ fontSize: '0.68rem', color: 'var(--text-dim)', letterSpacing: '0.02em' }}>
-            AI-Powered Academic Compliance System
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.65rem', color: 'var(--text-dim)', letterSpacing: '0.02em' }}>
+            <span className="db-status-dot" />
+            <span>MySQL Connected</span>
           </div>
         </div>
       </div>

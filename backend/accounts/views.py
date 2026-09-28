@@ -127,32 +127,107 @@ def me_view(request):
     })
 
 
+from django.db import transaction
+
 class AdminUserListCreateView(generics.ListCreateAPIView):
     """
     ADMIN-ONLY ENDPOINT:
     Lists all users or creates new user accounts across the institution.
     Strictly forbidden for Students and Faculty.
+    Supports atomic creation of User + Student / Faculty profile in one step.
     """
-    queryset = User.objects.all().order_by('username')
+    queryset = User.objects.all().select_related('department', 'student_profile', 'faculty_profile').order_by('username')
     serializer_class = UserSerializer
     permission_classes = [IsAdminUserRole]
 
     def create(self, request, *args, **kwargs):
         role = request.data.get('role', Role.STUDENT)
-        username = request.data.get('username')
-        password = request.data.get('password', 'Student@123')
-        email = request.data.get('email', f"{username}@edumerge.ac.in")
+        username = request.data.get('username', '').strip()
+        if not username:
+            return Response({'username': 'Username is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        default_pwd = 'Student@123' if role == Role.STUDENT else ('Faculty@123' if role in (Role.FACULTY, Role.HOD, Role.MENTOR) else 'Admin@123')
+        password = request.data.get('password') or default_pwd
+        email = request.data.get('email', '').strip() or f"{username.lower()}@edumerge.ac.in"
 
         if User.objects.filter(username=username).exists():
-            return Response({'detail': f"Username '{username}' already exists."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'username': f"Username '{username}' already exists. Please choose a different username."}, status=status.HTTP_400_BAD_REQUEST)
 
-        user = User.objects.create_user(
-            username=username,
-            email=email,
-            password=password,
-            first_name=request.data.get('first_name', ''),
-            last_name=request.data.get('last_name', ''),
-            role=role,
-            department_id=request.data.get('department')
-        )
+        first_name = request.data.get('first_name', '').strip()
+        last_name = request.data.get('last_name', '').strip()
+        dept_id = request.data.get('department')
+        if dept_id == '':
+            dept_id = None
+
+        with transaction.atomic():
+            user = User.objects.create_user(
+                username=username,
+                email=email,
+                password=password,
+                first_name=first_name,
+                last_name=last_name,
+                role=role,
+                department_id=dept_id
+            )
+
+            # If student profile fields provided
+            if role == Role.STUDENT and (request.data.get('roll_number') or request.data.get('section')):
+                from academic.models import Student, Section
+                from datetime import date
+                roll_number = request.data.get('roll_number', '').strip()
+                registration_number = request.data.get('registration_number', '').strip() or f"REG-{roll_number}"
+                section_id = request.data.get('section')
+                if not roll_number:
+                    transaction.set_rollback(True)
+                    return Response({'roll_number': 'Roll number is required for students.'}, status=status.HTTP_400_BAD_REQUEST)
+                if not section_id:
+                    transaction.set_rollback(True)
+                    return Response({'section': 'Section is required for students.'}, status=status.HTTP_400_BAD_REQUEST)
+                
+                if Student.objects.filter(roll_number=roll_number).exists():
+                    transaction.set_rollback(True)
+                    return Response({'roll_number': f"Student with roll number '{roll_number}' already exists."}, status=status.HTTP_400_BAD_REQUEST)
+
+                try:
+                    section = Section.objects.get(pk=section_id)
+                except Section.DoesNotExist:
+                    transaction.set_rollback(True)
+                    return Response({'section': 'Selected section does not exist.'}, status=status.HTTP_400_BAD_REQUEST)
+
+                admission_date = request.data.get('admission_date') or str(date.today())
+                current_sem = request.data.get('current_semester') or section.semester or 1
+
+                Student.objects.create(
+                    user=user,
+                    roll_number=roll_number,
+                    registration_number=registration_number,
+                    section=section,
+                    current_semester=int(current_sem),
+                    admission_date=admission_date,
+                    guardian_name=request.data.get('guardian_name', '').strip(),
+                    guardian_phone=request.data.get('guardian_phone', '').strip(),
+                )
+
+            # If faculty profile fields provided
+            elif role in (Role.FACULTY, Role.HOD, Role.MENTOR) and (request.data.get('employee_id') or dept_id):
+                from academic.models import Faculty, Department
+                emp_id = request.data.get('employee_id', '').strip() or f"FAC-{user.id}"
+                if Faculty.objects.filter(employee_id=emp_id).exists():
+                    transaction.set_rollback(True)
+                    return Response({'employee_id': f"Faculty with employee ID '{emp_id}' already exists."}, status=status.HTTP_400_BAD_REQUEST)
+
+                if not dept_id:
+                    first_dept = Department.objects.first()
+                    dept_id = first_dept.id if first_dept else None
+
+                if dept_id:
+                    dept = Department.objects.get(pk=dept_id)
+                    Faculty.objects.create(
+                        user=user,
+                        employee_id=emp_id,
+                        designation=request.data.get('designation', 'Assistant Professor').strip(),
+                        department=dept,
+                        qualification=request.data.get('qualification', 'M.Tech').strip(),
+                    )
+
         return Response(UserSerializer(user).data, status=status.HTTP_201_CREATED)

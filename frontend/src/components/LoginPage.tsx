@@ -46,30 +46,33 @@ export const LoginPage: React.FC = () => {
 
   return (
     <div className="login-page">
-      {/* Header */}
-      <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
-        <div className="header-badge" style={{ marginBottom: '0.75rem' }}>
-          <ShieldCheck size={14} />
+      {/* Hero Header */}
+      <div className="login-hero">
+        <div className="login-logo-ring">
+          <ShieldCheck size={30} color="#fff" />
+        </div>
+        <div className="header-badge" style={{ marginBottom: '1rem' }}>
+          <ShieldCheck size={12} />
           Edumerge &mdash; Secure Institutional Portal
         </div>
-        <h1 className="hero-title" style={{ fontSize: '2.4rem' }}>
-          Sign In to Your Account
+        <h1 className="hero-title" style={{ fontSize: '2.3rem' }}>
+          Smart Attendance System
         </h1>
-        <p className="hero-subtitle" style={{ margin: '0 auto' }}>
+        <p className="hero-subtitle" style={{ margin: '0.75rem auto 0', fontSize: '0.92rem' }}>
           Role-based access for students, faculty, and administrators.
-          Permissions are enforced server-side via JWT tokens.
+          Secure JWT authentication with server-side permission enforcement.
         </p>
       </div>
 
       <div className="login-layout">
         {/* Login Form */}
         <div className="glass-panel login-form-panel" style={{ padding: '2rem' }}>
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Lock size={18} color="var(--accent-cyan)" />
-            {isRegistering ? 'Create your student account' : 'Sign In with Institutional ID'}
+          <h2 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '0.35rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Lock size={17} color="var(--primary)" />
+            {isRegistering ? 'Create Student Account' : 'Sign In'}
           </h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1.5rem' }}>
-            {isRegistering ? 'Create an account to access your student attendance workspace.' : 'Use your institutional credentials to access the attendance workspace.'}
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', marginBottom: '1.5rem' }}>
+            {isRegistering ? 'Create an account to access your student attendance workspace.' : 'Use your institutional credentials to access the system.'}
           </p>
 
           {error && (

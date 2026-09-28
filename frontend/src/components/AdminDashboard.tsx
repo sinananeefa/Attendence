@@ -2,18 +2,26 @@ import React, { useEffect, useState } from 'react';
 import { api } from '../services/api';
 import { LoadingSpinner } from './LoadingSpinner';
 import { InlineError } from './EmptyState';
+import { AdminOnboarding } from './AdminOnboarding';
 import {
   ShieldAlert, Users, GraduationCap, Building2, TrendingUp,
   AlertTriangle, CheckCircle2, XCircle, ArrowUpRight, BarChart3,
-  Calendar, RefreshCw, Key
+  Calendar, RefreshCw, Key, LayoutDashboard, UserCog, BookOpen
 } from 'lucide-react';
 
 export const AdminDashboard: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'users'>('dashboard');
+  const [initialAddType, setInitialAddType] = useState<'STUDENT' | 'FACULTY' | null>(null);
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [threshold, setThreshold] = useState<number>(75);
   const [probeResult, setProbeResult] = useState<{ status: number; message: string; ok: boolean } | null>(null);
+
+  const handleSwitchToUsers = (type?: 'STUDENT' | 'FACULTY') => {
+    setActiveTab('users');
+    if (type) setInitialAddType(type);
+  };
 
   const fetchDashboardData = async (thresh: number = threshold) => {
     setLoading(true);
@@ -52,6 +60,59 @@ export const AdminDashboard: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+
+      {/* Tab navigation */}
+      <div style={{ display: 'flex', gap: '0.5rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.75rem' }}>
+        <button
+          className={`btn btn-sm ${activeTab === 'dashboard' ? 'btn-primary' : 'btn-secondary'}`}
+          onClick={() => setActiveTab('dashboard')}
+          id="tab-admin-attendance"
+        >
+          <LayoutDashboard size={14} /> Attendance Dashboard
+        </button>
+        <button
+          className={`btn btn-sm ${activeTab === 'users' ? 'btn-primary' : 'btn-secondary'}`}
+          onClick={() => setActiveTab('users')}
+          id="tab-admin-users"
+        >
+          <UserCog size={14} /> User Management
+        </button>
+      </div>
+
+      {/* User management tab */}
+      {activeTab === 'users' && (
+        <AdminOnboarding
+          initialAddType={initialAddType}
+          onClearInitialAddType={() => setInitialAddType(null)}
+        />
+      )}
+
+      {/* Attendance dashboard tab */}
+      {activeTab === 'dashboard' && <AttendanceDashboardPanel
+        data={data}
+        loading={loading}
+        error={error}
+        threshold={threshold}
+        setThreshold={setThreshold}
+        fetchDashboardData={fetchDashboardData}
+        probeResult={probeResult}
+        runAdminProbe={runAdminProbe}
+        onSwitchToUsers={handleSwitchToUsers}
+      />}
+    </div>
+  );
+};
+
+// ── Inner component: avoids JSX nesting complexity in the outer component ──
+const AttendanceDashboardPanel: React.FC<{
+  data: any; loading: boolean; error: string | null;
+  threshold: number; setThreshold: (v: number) => void;
+  fetchDashboardData: (t: number) => void;
+  probeResult: { status: number; message: string; ok: boolean } | null;
+  runAdminProbe: () => void;
+  onSwitchToUsers: (type?: 'STUDENT' | 'FACULTY') => void;
+}> = ({ data, loading, error, threshold, setThreshold, fetchDashboardData, probeResult, runAdminProbe, onSwitchToUsers }) => (
+  <>
       {/* Top Banner */}
       <div className="glass-panel" style={{ borderLeft: '4px solid #3b82f6' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
@@ -67,6 +128,22 @@ export const AdminDashboard: React.FC = () => {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+            <button
+              className="btn btn-primary btn-sm"
+              onClick={() => onSwitchToUsers('STUDENT')}
+              style={{ background: 'linear-gradient(135deg, #10b981, #059669)', border: 'none', color: '#fff' }}
+              id="dash-add-student-btn"
+            >
+              <GraduationCap size={13} /> + Add Student
+            </button>
+            <button
+              className="btn btn-primary btn-sm"
+              onClick={() => onSwitchToUsers('FACULTY')}
+              style={{ background: 'linear-gradient(135deg, #3b82f6, #2563eb)', border: 'none', color: '#fff' }}
+              id="dash-add-faculty-btn"
+            >
+              <BookOpen size={13} /> + Add Faculty
+            </button>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: 'rgba(15, 23, 42, 0.6)', padding: '0.4rem 0.8rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)' }}>
               <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>Threshold:</span>
               <select
@@ -102,6 +179,7 @@ export const AdminDashboard: React.FC = () => {
               Refresh
             </button>
 
+
             <button
               className="btn btn-secondary btn-sm"
               onClick={runAdminProbe}
@@ -134,7 +212,7 @@ export const AdminDashboard: React.FC = () => {
 
       {loading ? (
         <div className="glass-panel">
-          <LoadingSpinner message="Calculating institutional metrics…" />
+          <LoadingSpinner message="Calculating institutional metricsΓÇª" />
         </div>
       ) : error ? (
         <div className="glass-panel">
@@ -288,7 +366,7 @@ export const AdminDashboard: React.FC = () => {
                       <div>
                         <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>{dept.department_name}</div>
                         <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
-                          Total Students: {dept.total_students} • Critical: {dept.critical_count}
+                          Total Students: {dept.total_students} ΓÇó Critical: {dept.critical_count}
                         </div>
                       </div>
                       <div style={{ textAlign: 'right' }}>
@@ -385,6 +463,5 @@ export const AdminDashboard: React.FC = () => {
           </div>
         </>
       ) : null}
-    </div>
-  );
-};
+  </>
+);

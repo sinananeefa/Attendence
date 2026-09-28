@@ -85,6 +85,16 @@ export const api = {
     return Array.isArray(data) ? data : data.results || [];
   },
 
+  async createAdminUser(payload: any, token?: string): Promise<User> {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json', ...authHeader(token) };
+    const res = await fetch(`${API_BASE}/auth/admin/users/`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+    });
+    return handleResponse(res);
+  },
+
   // Faculty Protected APIs
   async getFacultyAllocations(token?: string): Promise<{ faculty_name: string; faculty_id: string; allocations: any[]; total_active_classes: number }> {
     const headers: Record<string, string> = { ...authHeader(token) };
@@ -281,6 +291,69 @@ export const api = {
     const headers: Record<string, string> = { ...authHeader(token) };
     const res = await fetch(`${API_BASE}/attendance/records/${recordId}/audit-logs/`, { headers });
     return handleResponse(res);
-  }
+  },
+
+  // Admin Onboarding APIs
+  async getUser(userId: number, token?: string): Promise<User> {
+    const headers: Record<string, string> = { ...authHeader(token) };
+    const res = await fetch(`${API_BASE}/auth/admin/users/${userId}/`, { headers });
+    return handleResponse(res);
+  },
+
+  async updateUser(userId: number, payload: Partial<User & { is_active: boolean }>, token?: string): Promise<User> {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json', ...authHeader(token) };
+    const res = await fetch(`${API_BASE}/auth/admin/users/${userId}/`, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify(payload),
+    });
+    return handleResponse(res);
+  },
+
+  async assignStudentProfile(userId: number, payload: {
+    roll_number: string;
+    registration_number: string;
+    section: number;
+    admission_date: string;
+    current_semester?: number;
+    guardian_name?: string;
+    guardian_phone?: string;
+  }, token?: string): Promise<any> {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json', ...authHeader(token) };
+    const res = await fetch(`${API_BASE}/auth/admin/users/${userId}/assign-student-profile/`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+    });
+    return handleResponse(res);
+  },
+
+  async assignFacultyProfile(userId: number, payload: {
+    employee_id: string;
+    department: number;
+    designation?: string;
+    qualification?: string;
+  }, token?: string): Promise<any> {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json', ...authHeader(token) };
+    const res = await fetch(`${API_BASE}/auth/admin/users/${userId}/assign-faculty-profile/`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+    });
+    return handleResponse(res);
+  },
+
+  async getPendingProfiles(token?: string): Promise<any> {
+    const headers: Record<string, string> = { ...authHeader(token) };
+    const res = await fetch(`${API_BASE}/auth/admin/users/pending-profiles/`, { headers });
+    return handleResponse(res);
+  },
+
+  async getSections(token?: string): Promise<any[]> {
+    const headers: Record<string, string> = { ...authHeader(token) };
+    const res = await fetch(`${API_BASE}/academic/sections/`, { headers });
+    const data = await handleResponse(res);
+    return Array.isArray(data) ? data : data.results || [];
+  },
 };
 
