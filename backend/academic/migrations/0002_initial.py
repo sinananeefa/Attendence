@@ -15,93 +15,556 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
-            model_name='faculty',
-            name='user',
-            field=models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='faculty_profile', to=settings.AUTH_USER_MODEL),
-        ),
-        migrations.AddField(
-            model_name='facultyallocation',
-            name='academic_year',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='allocations', to='academic.academicyear'),
-        ),
-        migrations.AddField(
-            model_name='facultyallocation',
-            name='faculty',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='allocations', to='academic.faculty'),
-        ),
-        migrations.AddField(
-            model_name='program',
-            name='department',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='programs', to='academic.department'),
-        ),
-        migrations.AddField(
-            model_name='section',
-            name='academic_year',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='sections', to='academic.academicyear'),
-        ),
-        migrations.AddField(
-            model_name='section',
-            name='mentor',
-            field=models.ForeignKey(blank=True, help_text='Faculty member acting as the section mentor / class advisor', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='mentored_sections', to=settings.AUTH_USER_MODEL),
-        ),
-        migrations.AddField(
-            model_name='section',
-            name='program',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='sections', to='academic.program'),
-        ),
-        migrations.AddField(
-            model_name='facultyallocation',
-            name='section',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='allocations', to='academic.section'),
-        ),
-        migrations.AddField(
-            model_name='student',
-            name='section',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='students', to='academic.section'),
-        ),
-        migrations.AddField(
-            model_name='student',
-            name='user',
-            field=models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='student_profile', to=settings.AUTH_USER_MODEL),
-        ),
-        migrations.AddField(
-            model_name='subject',
-            name='department',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='subjects', to='academic.department'),
-        ),
-        migrations.AddField(
-            model_name='facultyallocation',
-            name='subject',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='allocations', to='academic.subject'),
-        ),
-        migrations.AddField(
-            model_name='timetableslot',
-            name='allocation',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='timetable_slots', to='academic.facultyallocation'),
-        ),
-        migrations.AlterUniqueTogether(
-            name='section',
-            unique_together={('program', 'academic_year', 'semester', 'name')},
-        ),
-        migrations.AddIndex(
-            model_name='facultyallocation',
-            index=models.Index(fields=['faculty', 'is_active'], name='academic_fa_faculty_55d999_idx'),
-        ),
-        migrations.AddIndex(
-            model_name='facultyallocation',
-            index=models.Index(fields=['section', 'subject'], name='academic_fa_section_013db4_idx'),
-        ),
-        migrations.AlterUniqueTogether(
-            name='facultyallocation',
-            unique_together={('faculty', 'subject', 'section', 'academic_year')},
-        ),
-        migrations.AddIndex(
-            model_name='timetableslot',
-            index=models.Index(fields=['day_of_week', 'period_number'], name='academic_ti_day_of__d570bb_idx'),
-        ),
-        migrations.AlterUniqueTogether(
-            name='timetableslot',
-            unique_together={('allocation', 'day_of_week', 'period_number')},
+
+        migrations.SeparateDatabaseAndState(
+
+            # =====================================================
+            # DATABASE OPERATIONS
+            # =====================================================
+            database_operations=[
+
+                # -------------------------------------------------
+                # Add columns FIRST - no foreign keys yet
+                # -------------------------------------------------
+
+                migrations.RunSQL(
+                    sql="""
+                        ALTER TABLE academic_faculty
+                        ADD COLUMN user_id BIGINT NOT NULL;
+                    """,
+                    reverse_sql="""
+                        ALTER TABLE academic_faculty
+                        DROP COLUMN user_id;
+                    """,
+                ),
+
+                migrations.RunSQL(
+                    sql="""
+                        ALTER TABLE academic_facultyallocation
+                        ADD COLUMN academic_year_id BIGINT NOT NULL;
+                    """,
+                    reverse_sql="""
+                        ALTER TABLE academic_facultyallocation
+                        DROP COLUMN academic_year_id;
+                    """,
+                ),
+
+                migrations.RunSQL(
+                    sql="""
+                        ALTER TABLE academic_facultyallocation
+                        ADD COLUMN faculty_id BIGINT NOT NULL;
+                    """,
+                    reverse_sql="""
+                        ALTER TABLE academic_facultyallocation
+                        DROP COLUMN faculty_id;
+                    """,
+                ),
+
+                migrations.RunSQL(
+                    sql="""
+                        ALTER TABLE academic_program
+                        ADD COLUMN department_id BIGINT NOT NULL;
+                    """,
+                    reverse_sql="""
+                        ALTER TABLE academic_program
+                        DROP COLUMN department_id;
+                    """,
+                ),
+
+                migrations.RunSQL(
+                    sql="""
+                        ALTER TABLE academic_section
+                        ADD COLUMN academic_year_id BIGINT NOT NULL;
+                    """,
+                    reverse_sql="""
+                        ALTER TABLE academic_section
+                        DROP COLUMN academic_year_id;
+                    """,
+                ),
+
+                migrations.RunSQL(
+                    sql="""
+                        ALTER TABLE academic_section
+                        ADD COLUMN mentor_id BIGINT NULL;
+                    """,
+                    reverse_sql="""
+                        ALTER TABLE academic_section
+                        DROP COLUMN mentor_id;
+                    """,
+                ),
+
+                migrations.RunSQL(
+                    sql="""
+                        ALTER TABLE academic_section
+                        ADD COLUMN program_id BIGINT NOT NULL;
+                    """,
+                    reverse_sql="""
+                        ALTER TABLE academic_section
+                        DROP COLUMN program_id;
+                    """,
+                ),
+
+                migrations.RunSQL(
+                    sql="""
+                        ALTER TABLE academic_facultyallocation
+                        ADD COLUMN section_id BIGINT NOT NULL;
+                    """,
+                    reverse_sql="""
+                        ALTER TABLE academic_facultyallocation
+                        DROP COLUMN section_id;
+                    """,
+                ),
+
+                migrations.RunSQL(
+                    sql="""
+                        ALTER TABLE academic_student
+                        ADD COLUMN section_id BIGINT NOT NULL;
+                    """,
+                    reverse_sql="""
+                        ALTER TABLE academic_student
+                        DROP COLUMN section_id;
+                    """,
+                ),
+
+                migrations.RunSQL(
+                    sql="""
+                        ALTER TABLE academic_student
+                        ADD COLUMN user_id BIGINT NOT NULL;
+                    """,
+                    reverse_sql="""
+                        ALTER TABLE academic_student
+                        DROP COLUMN user_id;
+                    """,
+                ),
+
+                migrations.RunSQL(
+                    sql="""
+                        ALTER TABLE academic_subject
+                        ADD COLUMN department_id BIGINT NOT NULL;
+                    """,
+                    reverse_sql="""
+                        ALTER TABLE academic_subject
+                        DROP COLUMN department_id;
+                    """,
+                ),
+
+                migrations.RunSQL(
+                    sql="""
+                        ALTER TABLE academic_facultyallocation
+                        ADD COLUMN subject_id BIGINT NOT NULL;
+                    """,
+                    reverse_sql="""
+                        ALTER TABLE academic_facultyallocation
+                        DROP COLUMN subject_id;
+                    """,
+                ),
+
+                migrations.RunSQL(
+                    sql="""
+                        ALTER TABLE academic_timetableslot
+                        ADD COLUMN allocation_id BIGINT NOT NULL;
+                    """,
+                    reverse_sql="""
+                        ALTER TABLE academic_timetableslot
+                        DROP COLUMN allocation_id;
+                    """,
+                ),
+
+                # -------------------------------------------------
+                # Unique indexes for OneToOne relationships
+                # -------------------------------------------------
+
+                migrations.RunSQL(
+                    sql="""
+                        CREATE UNIQUE INDEX academic_faculty_user_id_uniq
+                        ON academic_faculty (user_id);
+                    """,
+                    reverse_sql="""
+                        DROP INDEX academic_faculty_user_id_uniq
+                        ON academic_faculty;
+                    """,
+                ),
+
+                migrations.RunSQL(
+                    sql="""
+                        CREATE UNIQUE INDEX academic_student_user_id_uniq
+                        ON academic_student (user_id);
+                    """,
+                    reverse_sql="""
+                        DROP INDEX academic_student_user_id_uniq
+                        ON academic_student;
+                    """,
+                ),
+
+                # -------------------------------------------------
+                # Add FOREIGN KEYS AFTER all columns exist
+                # -------------------------------------------------
+
+                migrations.RunSQL(
+                    sql="""
+                        ALTER TABLE academic_faculty
+                        ADD CONSTRAINT academic_faculty_user_fk
+                        FOREIGN KEY (user_id)
+                        REFERENCES accounts_user (id)
+                        ON DELETE CASCADE;
+                    """,
+                    reverse_sql="""
+                        ALTER TABLE academic_faculty
+                        DROP FOREIGN KEY academic_faculty_user_fk;
+                    """,
+                ),
+
+                migrations.RunSQL(
+                    sql="""
+                        ALTER TABLE academic_facultyallocation
+                        ADD CONSTRAINT academic_facultyallocation_academic_year_fk
+                        FOREIGN KEY (academic_year_id)
+                        REFERENCES academic_academicyear (id)
+                        ON DELETE CASCADE;
+                    """,
+                    reverse_sql="""
+                        ALTER TABLE academic_facultyallocation
+                        DROP FOREIGN KEY academic_facultyallocation_academic_year_fk;
+                    """,
+                ),
+
+                migrations.RunSQL(
+                    sql="""
+                        ALTER TABLE academic_facultyallocation
+                        ADD CONSTRAINT academic_facultyallocation_faculty_fk
+                        FOREIGN KEY (faculty_id)
+                        REFERENCES academic_faculty (id)
+                        ON DELETE CASCADE;
+                    """,
+                    reverse_sql="""
+                        ALTER TABLE academic_facultyallocation
+                        DROP FOREIGN KEY academic_facultyallocation_faculty_fk;
+                    """,
+                ),
+
+                migrations.RunSQL(
+                    sql="""
+                        ALTER TABLE academic_program
+                        ADD CONSTRAINT academic_program_department_fk
+                        FOREIGN KEY (department_id)
+                        REFERENCES academic_department (id)
+                        ON DELETE CASCADE;
+                    """,
+                    reverse_sql="""
+                        ALTER TABLE academic_program
+                        DROP FOREIGN KEY academic_program_department_fk;
+                    """,
+                ),
+
+                migrations.RunSQL(
+                    sql="""
+                        ALTER TABLE academic_section
+                        ADD CONSTRAINT academic_section_academic_year_fk
+                        FOREIGN KEY (academic_year_id)
+                        REFERENCES academic_academicyear (id)
+                        ON DELETE CASCADE;
+                    """,
+                    reverse_sql="""
+                        ALTER TABLE academic_section
+                        DROP FOREIGN KEY academic_section_academic_year_fk;
+                    """,
+                ),
+
+                migrations.RunSQL(
+                    sql="""
+                        ALTER TABLE academic_section
+                        ADD CONSTRAINT academic_section_mentor_fk
+                        FOREIGN KEY (mentor_id)
+                        REFERENCES accounts_user (id)
+                        ON DELETE SET NULL;
+                    """,
+                    reverse_sql="""
+                        ALTER TABLE academic_section
+                        DROP FOREIGN KEY academic_section_mentor_fk;
+                    """,
+                ),
+
+                migrations.RunSQL(
+                    sql="""
+                        ALTER TABLE academic_section
+                        ADD CONSTRAINT academic_section_program_fk
+                        FOREIGN KEY (program_id)
+                        REFERENCES academic_program (id)
+                        ON DELETE CASCADE;
+                    """,
+                    reverse_sql="""
+                        ALTER TABLE academic_section
+                        DROP FOREIGN KEY academic_section_program_fk;
+                    """,
+                ),
+
+                migrations.RunSQL(
+                    sql="""
+                        ALTER TABLE academic_facultyallocation
+                        ADD CONSTRAINT academic_facultyallocation_section_fk
+                        FOREIGN KEY (section_id)
+                        REFERENCES academic_section (id)
+                        ON DELETE CASCADE;
+                    """,
+                    reverse_sql="""
+                        ALTER TABLE academic_facultyallocation
+                        DROP FOREIGN KEY academic_facultyallocation_section_fk;
+                    """,
+                ),
+
+                migrations.RunSQL(
+                    sql="""
+                        ALTER TABLE academic_student
+                        ADD CONSTRAINT academic_student_section_fk
+                        FOREIGN KEY (section_id)
+                        REFERENCES academic_section (id)
+                        ON DELETE RESTRICT;
+                    """,
+                    reverse_sql="""
+                        ALTER TABLE academic_student
+                        DROP FOREIGN KEY academic_student_section_fk;
+                    """,
+                ),
+
+                migrations.RunSQL(
+                    sql="""
+                        ALTER TABLE academic_student
+                        ADD CONSTRAINT academic_student_user_fk
+                        FOREIGN KEY (user_id)
+                        REFERENCES accounts_user (id)
+                        ON DELETE CASCADE;
+                    """,
+                    reverse_sql="""
+                        ALTER TABLE academic_student
+                        DROP FOREIGN KEY academic_student_user_fk;
+                    """,
+                ),
+
+                migrations.RunSQL(
+                    sql="""
+                        ALTER TABLE academic_subject
+                        ADD CONSTRAINT academic_subject_department_fk
+                        FOREIGN KEY (department_id)
+                        REFERENCES academic_department (id)
+                        ON DELETE CASCADE;
+                    """,
+                    reverse_sql="""
+                        ALTER TABLE academic_subject
+                        DROP FOREIGN KEY academic_subject_department_fk;
+                    """,
+                ),
+
+                migrations.RunSQL(
+                    sql="""
+                        ALTER TABLE academic_facultyallocation
+                        ADD CONSTRAINT academic_facultyallocation_subject_fk
+                        FOREIGN KEY (subject_id)
+                        REFERENCES academic_subject (id)
+                        ON DELETE CASCADE;
+                    """,
+                    reverse_sql="""
+                        ALTER TABLE academic_facultyallocation
+                        DROP FOREIGN KEY academic_facultyallocation_subject_fk;
+                    """,
+                ),
+
+                migrations.RunSQL(
+                    sql="""
+                        ALTER TABLE academic_timetableslot
+                        ADD CONSTRAINT academic_timetableslot_allocation_fk
+                        FOREIGN KEY (allocation_id)
+                        REFERENCES academic_facultyallocation (id)
+                        ON DELETE CASCADE;
+                    """,
+                    reverse_sql="""
+                        ALTER TABLE academic_timetableslot
+                        DROP FOREIGN KEY academic_timetableslot_allocation_fk;
+                    """,
+                ),
+            ],
+
+            # =====================================================
+            # DJANGO MIGRATION STATE
+            # =====================================================
+            state_operations=[
+
+                migrations.AddField(
+                    model_name='faculty',
+                    name='user',
+                    field=models.OneToOneField(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='faculty_profile',
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+
+                migrations.AddField(
+                    model_name='facultyallocation',
+                    name='academic_year',
+                    field=models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='allocations',
+                        to='academic.academicyear',
+                    ),
+                ),
+
+                migrations.AddField(
+                    model_name='facultyallocation',
+                    name='faculty',
+                    field=models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='allocations',
+                        to='academic.faculty',
+                    ),
+                ),
+
+                migrations.AddField(
+                    model_name='program',
+                    name='department',
+                    field=models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='programs',
+                        to='academic.department',
+                    ),
+                ),
+
+                migrations.AddField(
+                    model_name='section',
+                    name='academic_year',
+                    field=models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='sections',
+                        to='academic.academicyear',
+                    ),
+                ),
+
+                migrations.AddField(
+                    model_name='section',
+                    name='mentor',
+                    field=models.ForeignKey(
+                        blank=True,
+                        help_text='Faculty member acting as the section mentor / class advisor',
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name='mentored_sections',
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+
+                migrations.AddField(
+                    model_name='section',
+                    name='program',
+                    field=models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='sections',
+                        to='academic.program',
+                    ),
+                ),
+
+                migrations.AddField(
+                    model_name='facultyallocation',
+                    name='section',
+                    field=models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='allocations',
+                        to='academic.section',
+                    ),
+                ),
+
+                migrations.AddField(
+                    model_name='student',
+                    name='section',
+                    field=models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name='students',
+                        to='academic.section',
+                    ),
+                ),
+
+                migrations.AddField(
+                    model_name='student',
+                    name='user',
+                    field=models.OneToOneField(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='student_profile',
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+
+                migrations.AddField(
+                    model_name='subject',
+                    name='department',
+                    field=models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='subjects',
+                        to='academic.department',
+                    ),
+                ),
+
+                migrations.AddField(
+                    model_name='facultyallocation',
+                    name='subject',
+                    field=models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='allocations',
+                        to='academic.subject',
+                    ),
+                ),
+
+                migrations.AddField(
+                    model_name='timetableslot',
+                    name='allocation',
+                    field=models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='timetable_slots',
+                        to='academic.facultyallocation',
+                    ),
+                ),
+
+                migrations.AlterUniqueTogether(
+                    name='section',
+                    unique_together={
+                        ('program', 'academic_year', 'semester', 'name')
+                    },
+                ),
+
+                migrations.AddIndex(
+                    model_name='facultyallocation',
+                    index=models.Index(
+                        fields=['faculty', 'is_active'],
+                        name='academic_fa_faculty_55d999_idx',
+                    ),
+                ),
+
+                migrations.AddIndex(
+                    model_name='facultyallocation',
+                    index=models.Index(
+                        fields=['section', 'subject'],
+                        name='academic_fa_section_013db4_idx',
+                    ),
+                ),
+
+                migrations.AlterUniqueTogether(
+                    name='facultyallocation',
+                    unique_together={
+                        ('faculty', 'subject', 'section', 'academic_year')
+                    },
+                ),
+
+                migrations.AddIndex(
+                    model_name='timetableslot',
+                    index=models.Index(
+                        fields=['day_of_week', 'period_number'],
+                        name='academic_ti_day_of__d570bb_idx',
+                    ),
+                ),
+
+                migrations.AlterUniqueTogether(
+                    name='timetableslot',
+                    unique_together={
+                        ('allocation', 'day_of_week', 'period_number')
+                    },
+                ),
+            ],
         ),
     ]
